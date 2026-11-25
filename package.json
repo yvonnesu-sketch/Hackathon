@@ -1,0 +1,8 @@
+{
+  "name": "brd-automation",
+  "version": "0.1.0",
+  "description": "Automate Finance / Accounting BRD requirements from PRDs and kick-off decks",
+  "main": "server.js",
+  "scripts": { "start": "node server.js" },
+  "engines": { "node": ">=18" }
+}

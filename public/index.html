@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Finance BRD Automation – New Intake</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <header>
+    <h1>Finance &amp; Accounting BRD Automation</h1>
+    <p class="sub">Step 1 · Submit source documents</p>
+  </header>
+
+  <main>
+    <section class="card">
+      <h2>New BRD intake</h2>
+      <form id="intake-form" novalidate>
+        <div class="grid">
+          <label>Project name *
+            <input name="projectName" required placeholder="e.g. Multi-currency settlement" />
+          </label>
+          <label>Requester / owner
+            <input name="owner" placeholder="Name or team" />
+          </label>
+          <label>Finance area
+            <select name="financeArea">
+              <option value="">Select…</option>
+              <option>Revenue recognition</option>
+              <option>Settlement &amp; reconciliation</option>
+              <option>General ledger / journals</option>
+              <option>Billing &amp; invoicing</option>
+              <option>Tax</option>
+              <option>Treasury</option>
+              <option>Financial reporting</option>
+              <option>Other</option>
+            </select>
+          </label>
+        </div>
+
+        <fieldset>
+          <legend>PRD links *</legend>
+          <div class="links" data-group="prdLinks"></div>
+          <button type="button" class="add" data-add="prdLinks">+ Add another PRD link</button>
+        </fieldset>
+
+        <fieldset>
+          <legend>Kick-off deck links *</legend>
+          <div class="links" data-group="kickoffLinks"></div>
+          <button type="button" class="add" data-add="kickoffLinks">+ Add another deck link</button>
+        </fieldset>
+
+        <label>Notes for the BRD (optional)
+          <textarea name="notes" rows="3" placeholder="Scope, key stakeholders, deadlines, known accounting impacts…"></textarea>
+        </label>
+
+        <div id="errors" class="errors" hidden></div>
+        <button type="submit" class="primary">Submit intake</button>
+      </form>
+    </section>
+
+    <section class="card">
+      <h2>Submitted intakes</h2>
+      <div id="list"><p class="muted">Loading…</p></div>
+    </section>
+  </main>
+
+  <template id="link-row">
+    <div class="link-row">
+      <input type="url" placeholder="https://docs.google.com/…" />
+      <span class="badge"></span>
+      <button type="button" class="remove" title="Remove">✕</button>
+    </div>
+  </template>
+
+  <script src="/app.js"></script>
+</body>
+</html>
