@@ -12,6 +12,16 @@ Open http://localhost:3000.
 
 No dependencies are needed (Node 18+). Submissions are saved to `data/intakes.json`.
 
+## Standalone page (no server)
+
+```bash
+npm run build
+```
+
+This writes `dist/brd-intake.html`, a single file you can open in any browser. Without the server, entries are saved in that browser only. The badge in the header shows where entries are being saved.
+
+Each intake has a **Copy links for Claude** button, which copies its links so you can paste them into a Claude chat.
+
 ## API
 
 - `GET /api/intakes`: list intakes

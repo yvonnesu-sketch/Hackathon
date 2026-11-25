@@ -78,17 +78,46 @@ form.addEventListener('submit', async (e) => {
   const btn = form.querySelector('.primary');
   btn.disabled = true;
   try {
-    const res = await fetch('/api/intakes', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload),
-    });
-    const data = await res.json();
-    if (!res.ok) return showErrors(data.errors || ['Something went wrong']);
+    const { ok, data } = await store.create(payload);
+    if (!ok) return showErrors(data.errors || ['Something went wrong']);
     showErrors([]);
     form.reset();
     form.querySelectorAll('.links').forEach((c) => (c.innerHTML = ''));
     ['prdLinks', 'kickoffLinks'].forEach((g) => addRow(g));
     toast(`Intake "${data.projectName}" submitted`);
-    loadList();
+    function intakeSummary(i) {
+  return [
+    `Project: ${i.projectName}`,
+    i.owner && `Owner: ${i.owner}`,
+    i.financeArea && `Finance area: ${i.financeArea}`,
+    'PRD links:', ...i.prdLinks.map((l) => `- ${l.url}`),
+    'Kick-off deck links:', ...i.kickoffLinks.map((l) => `- ${l.url}`),
+    i.notes && `Notes: ${i.notes}`,
+  ].filter(Boolean).join('\n');
+}
+
+async function copyText(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+    toast('Copied. Paste it into the Claude chat.');
+  } catch {
+    // Clipboard can be blocked in embedded previews: show the text to copy by hand.
+    const box = document.getElementById('copy-box');
+    box.hidden = false;
+    box.querySelector('textarea').value = text;
+    box.querySelector('textarea').select();
+  }
+}
+document.querySelector('#copy-box button').addEventListener('click', () => {
+  document.getElementById('copy-box').hidden = true;
+});
+
+store.init().then(() => {
+  document.getElementById('mode').textContent = store.mode === 'server'
+    ? 'Saved on the server'
+    : store.mode === 'local' ? 'Saved in this browser only' : 'Not saved: storage is blocked here, so entries disappear on reload';
+  loadList();
+});
   } catch {
     showErrors(['Could not reach the server']);
   } finally {
@@ -104,7 +133,7 @@ const linkList = (links) => `<ul>${links.map((l) =>
   `<li><a href="${escapeHtml(l.url)}" target="_blank" rel="noopener">${escapeHtml(l.url)}</a> <span class="badge">${SOURCE_LABELS[l.source]}</span></li>`).join('')}</ul>`;
 
 async function loadList() {
-  const items = await (await fetch('/api/intakes')).json();
+  const items = await store.list();
   if (!items.length) { list.innerHTML = '<p class="muted">No intakes yet.</p>'; return; }
   list.innerHTML = items.map((i) => `
     <div class="intake">
@@ -113,12 +142,20 @@ async function loadList() {
       <strong>PRD</strong>${linkList(i.prdLinks)}
       <strong>Kick-off deck</strong>${linkList(i.kickoffLinks)}
       ${i.notes ? `<p class="meta">${escapeHtml(i.notes)}</p>` : ''}
-      <button class="del" data-id="${i.id}">Delete</button>
+      <div class="actions">
+        <button class="copy" data-id="${i.id}">Copy links for Claude</button>
+        <button class="del" data-id="${i.id}">Delete</button>
+      </div>
     </div>`).join('');
+  // Two-click delete (confirm() is blocked when the page is embedded in a preview panel).
   list.querySelectorAll('.del').forEach((b) => b.addEventListener('click', async () => {
-    if (!confirm('Delete this intake?')) return;
-    await fetch(`/api/intakes/${b.dataset.id}`, { method: 'DELETE' });
-    loadList();
+    if (b.dataset.armed) { await store.remove(b.dataset.id); return loadList(); }
+    b.dataset.armed = '1'; b.textContent = 'Click again to delete';
+    setTimeout(() => { delete b.dataset.armed; b.textContent = 'Delete'; }, 3000);
+  }));
+  list.querySelectorAll('.copy').forEach((b) => b.addEventListener('click', () => {
+    const i = items.find((x) => x.id === b.dataset.id);
+    copyText(intakeSummary(i));
   }));
 }
 
@@ -129,4 +166,36 @@ function toast(msg) {
   setTimeout(() => t.remove(), 3000);
 }
 
-loadList();
+function intakeSummary(i) {
+  return [
+    `Project: ${i.projectName}`,
+    i.owner && `Owner: ${i.owner}`,
+    i.financeArea && `Finance area: ${i.financeArea}`,
+    'PRD links:', ...i.prdLinks.map((l) => `- ${l.url}`),
+    'Kick-off deck links:', ...i.kickoffLinks.map((l) => `- ${l.url}`),
+    i.notes && `Notes: ${i.notes}`,
+  ].filter(Boolean).join('\n');
+}
+
+async function copyText(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+    toast('Copied. Paste it into the Claude chat.');
+  } catch {
+    // Clipboard can be blocked in embedded previews: show the text to copy by hand.
+    const box = document.getElementById('copy-box');
+    box.hidden = false;
+    box.querySelector('textarea').value = text;
+    box.querySelector('textarea').select();
+  }
+}
+document.querySelector('#copy-box button').addEventListener('click', () => {
+  document.getElementById('copy-box').hidden = true;
+});
+
+store.init().then(() => {
+  document.getElementById('mode').textContent = store.mode === 'server'
+    ? 'Saved on the server'
+    : store.mode === 'local' ? 'Saved in this browser only' : 'Not saved: storage is blocked here, so entries disappear on reload';
+  loadList();
+});
